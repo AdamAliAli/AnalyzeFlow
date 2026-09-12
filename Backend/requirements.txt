@@ -1,0 +1,29 @@
+# --- Web framework ---
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+python-multipart==0.0.20
+
+# --- Config & validation ---
+pydantic==2.10.5
+pydantic-settings==2.7.1
+email-validator==2.2.0
+
+# --- Database ---
+sqlalchemy[asyncio]==2.0.37
+asyncpg==0.30.0
+alembic==1.14.1
+psycopg2-binary==2.9.10   # sync driver, used by Alembic only
+greenlet==3.1.1
+
+# --- Auth ---
+bcrypt==4.2.1
+pyjwt==2.10.1
+
+# --- Website fetching & parsing ---
+httpx==0.28.1
+selectolax==0.3.27
+beautifulsoup4==4.12.3
+
+# --- Utilities ---
+tenacity==9.0.0
+python-dotenv==1.0.1

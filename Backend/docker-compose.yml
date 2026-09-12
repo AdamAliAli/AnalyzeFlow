@@ -1,0 +1,37 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: analyzeflow-db
+    environment:
+      POSTGRES_USER: analyzeflow
+      POSTGRES_PASSWORD: analyzeflow
+      POSTGRES_DB: analyzeflow
+    ports:
+      - "5432:5432"
+    volumes:
+      - analyzeflow_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U analyzeflow"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: .
+    container_name: analyzeflow-api
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+asyncpg://analyzeflow:analyzeflow@db:5432/analyzeflow
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    command: >
+      sh -c "alembic upgrade head &&
+             python -m scripts.seed &&
+             uvicorn app.main:app --host 0.0.0.0 --port 8000"
+
+volumes:
+  analyzeflow_pgdata:
