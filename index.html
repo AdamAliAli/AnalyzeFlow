@@ -29,6 +29,7 @@
         </ul>
 
         <button class="">Book A Free Aduit</button>
+        <a href="#" class="auth-nav-link" id="authNavLink">Sign in</a>
       </nav>
     </header>
 
@@ -468,10 +469,63 @@
         <p>Designed & Developed by Adam Ali.</p>
       </div>
     </footer>
-    <div class="modal-overlay">
+    <!-- Auth Modal -->
+    <div class="modal-overlay" id="authModalOverlay">
+      <div class="modal" style="max-width: 480px;">
+        <div class="modal-top">
+          <div class="modal-top-content">
+            <span class="step-tag">Welcome</span>
+            <h2 id="authModalTitle">Sign In</h2>
+          </div>
+          <button type="button" class="close-modal" id="authCloseBtn">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <div class="modal-content">
+          <!-- Login Form -->
+          <div id="loginForm">
+            <div class="input-group">
+              <label>Email</label>
+              <input type="email" id="loginEmail" placeholder="you@example.com" />
+            </div>
+            <div class="input-group" style="margin-top: 1rem;">
+              <label>Password</label>
+              <input type="password" id="loginPassword" placeholder="Your password" />
+            </div>
+            <p id="loginError" style="color: #dc2626; margin-top: 0.75rem; display: none;"></p>
+            <button type="button" id="loginSubmitBtn" class="next-btn" style="width: 100%; margin-top: 1.5rem;">Sign In</button>
+            <p style="text-align: center; margin-top: 1rem; color: #64748b;">
+              Don't have an account? <a href="#" id="showRegister" style="color: #2563eb; font-weight: 600;">Create one</a>
+            </p>
+          </div>
+          <!-- Register Form -->
+          <div id="registerForm" style="display: none;">
+            <div class="input-group">
+              <label>Full Name</label>
+              <input type="text" id="registerName" placeholder="John Doe" />
+            </div>
+            <div class="input-group" style="margin-top: 1rem;">
+              <label>Email</label>
+              <input type="email" id="registerEmail" placeholder="you@example.com" />
+            </div>
+            <div class="input-group" style="margin-top: 1rem;">
+              <label>Password</label>
+              <input type="password" id="registerPassword" placeholder="Min 8 chars, letters & numbers" />
+            </div>
+            <p id="registerError" style="color: #dc2626; margin-top: 0.75rem; display: none;"></p>
+            <button type="button" id="registerSubmitBtn" class="next-btn" style="width: 100%; margin-top: 1.5rem;">Create Account</button>
+            <p style="text-align: center; margin-top: 1rem; color: #64748b;">
+              Already have an account? <a href="#" id="showLogin" style="color: #2563eb; font-weight: 600;">Sign in</a>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="auditModalOverlay">
       <div class="modal">
         <!-- MODAL HEADER -->
-        <div class="modal-top">
+        <div class="modal-top" id="auditModalTop">
           <div class="modal-top-content">
             <span class="step-tag">Business Audit</span>
 
@@ -539,14 +593,13 @@
                 <label>Industry</label>
 
                 <select id="industry">
-                  <option selected disabled>Select Industry</option>
-
-                  <option>Restaurant</option>
-                  <option>E-commerce</option>
-                  <option>Agency</option>
-                  <option>Portfolio</option>
-                  <option>Education</option>
-                  <option>Healthcare</option>
+                  <option value="" selected disabled>Select Industry</option>
+                  <option value="restaurant">Restaurant</option>
+                  <option value="ecommerce">E-commerce</option>
+                  <option value="agency">Agency</option>
+                  <option value="portfolio">Portfolio</option>
+                  <option value="education">Education</option>
+                  <option value="healthcare">Healthcare</option>
                 </select>
               </div>
             </div>
@@ -562,7 +615,7 @@
               </div>
 
               <div class="goal-grid">
-                <div class="goal-card" data-value="Increae Sales">
+                <div class="goal-card" data-value="Increase Sales">
                   <i class="fa-solid fa-sack-dollar"></i>
                   <h3>Increase Sales</h3>
                   <p>Convert more visitors into paying customers.</p>
@@ -582,11 +635,8 @@
                   </p>
                 </div>
 
-                <div class="goal-card">
-                  <i
-                    class="fa-solid fa-users"
-                    data-value="Customer Journey"
-                  ></i>
+                <div class="goal-card" data-value="Customer Journey">
+                  <i class="fa-solid fa-users"></i>
                   <h3>Customer Journey</h3>
                   <p>Improve the experience from first visit to conversion.</p>
                 </div>
@@ -644,11 +694,8 @@
                   <p>Customers rarely return after their first purchase.</p>
                 </div>
 
-                <div class="challenge-card">
-                  <i
-                    class="fa-solid fa-chart-simple"
-                    data-value="Low Conversion Rate"
-                  ></i>
+                <div class="challenge-card" data-value="Low Conversion Rate">
+                  <i class="fa-solid fa-chart-simple"></i>
                   <h3>Low Conversion Rate</h3>
                   <p>
                     Visitors aren't taking the actions you want them to take.
@@ -718,6 +765,7 @@
       </div>
     </div>
 
+    <script src="./api.js"></script>
     <script src="./js.js"></script>
   </body>
 </html>

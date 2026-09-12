@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css"
+      integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+    <link rel="stylesheet" href="./style.css" />
+    <title>Analysis Report - ThinkFirst</title>
+  </head>
+
+  <body>
+    <header>
+      <nav>
+        <div class="logo">
+          <a href="./index.html">Think<span>First</span></a>
+        </div>
+        <ul>
+          <li><a href="./index.html">Home</a></li>
+        </ul>
+        <a href="./index.html" style="color: #2563eb; text-decoration: none; font-weight: 600;">Back to Home</a>
+      </nav>
+    </header>
+
+    <div id="reportRoot">
+      <div style="text-align: center; padding: 200px 2rem;">
+        <p style="color: #64748b;">Loading report...</p>
+      </div>
+    </div>
+
+    <script src="./api.js"></script>
+    <script>
+    (async function () {
+      var root = document.getElementById("reportRoot");
+
+      // Get audit ID from query param
+      var params = new URLSearchParams(window.location.search);
+      var auditId = params.get("audit");
+
+      if (!auditId) {
+        root.innerHTML = '<div class="report-sign-in"><h2>No report specified</h2><p>Please start an analysis from the <a href="./index.html">home page</a>.</p></div>';
+        return;
+      }
+
+      if (!API.isSignedIn()) {
+        root.innerHTML = '<div class="report-sign-in"><h2>Sign in required</h2><p>Please <a href="./index.html">sign in</a> to view this report.</p></div>';
+        return;
+      }
+
+      var report;
+      try {
+        report = await API.getReport(auditId);
+      } catch (err) {
+        if (err.status === 401 || err.status === 403) {
+          root.innerHTML = '<div class="report-sign-in"><h2>Access denied</h2><p>Please <a href="./index.html">sign in</a> with the account that created this audit.</p></div>';
+        } else {
+          root.innerHTML = '<div class="report-sign-in"><h2>Error loading report</h2><p>' + escapeHtml(err.message) + '</p></div>';
+        }
+        return;
+      }
+
+      renderReport(report);
+    })();
+
+    function escapeHtml(str) {
+      var div = document.createElement("div");
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    function formatDate(iso) {
+      try {
+        var d = new Date(iso);
+        return d.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
+          + " at " + d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+      } catch (_) {
+        return iso;
+      }
+    }
+
+    function severityColor(sev) {
+      var map = { critical: "#dc2626", high: "#ea580c", medium: "#fbbf24", low: "#64748b", info: "#2563eb" };
+      return map[sev] || "#64748b";
+    }
+
+    function scoreColor(val) {
+      if (val >= 80) return "#22c55e";
+      if (val >= 60) return "#fbbf24";
+      return "#dc2626";
+    }
+
+    function renderReport(r) {
+      var root = document.getElementById("reportRoot");
+      var html = "";
+
+      // a. Header
+      var businessName = r.site && r.site.page_title ? r.site.page_title : "Website";
+      var finalUrl = r.site ? r.site.final_url : "";
+      html += '<div class="report-header">';
+      html += '<h1>' + escapeHtml(businessName) + '</h1>';
+      if (finalUrl) {
+        html += '<a href="' + escapeHtml(finalUrl) + '" target="_blank" rel="noopener">' + escapeHtml(finalUrl) + '</a>';
+      }
+      html += '<p class="report-date">Generated ' + formatDate(r.generated_at) + '</p>';
+      html += '</div>';
+
+      // b. Overall score ring + c. Sub-scores
+      html += '<div class="report-scores">';
+
+      // Score ring
+      html += '<div class="health-score">';
+      html += '<div class="score-circle">';
+      html += '<svg viewBox="0 0 180 180"><circle class="bg-circle" cx="90" cy="90" r="75"></circle>';
+      html += '<circle class="progress-circle" cx="90" cy="90" r="75" id="scoreCircle"></circle></svg>';
+      html += '<div class="score-text"><h2 id="score">0</h2><span>Overall Score</span></div>';
+      html += '</div>';
+      html += '<p>Your website health score based on design, technical, and business factors.</p>';
+      html += '</div>';
+
+      // Sub-scores
+      html += '<div class="sub-scores">';
+      var subScores = [
+        { label: "Design & UX", key: "visual" },
+        { label: "Technical", key: "technical" },
+        { label: "Business", key: "business" },
+      ];
+      subScores.forEach(function (s) {
+        var val = r.scores[s.key] || 0;
+        html += '<div class="metric">';
+        html += '<span>' + s.label + '</span>';
+        html += '<div class="progress" style="flex: 1; margin: 0 1rem; height: 10px;">';
+        html += '<div class="fill" style="width: ' + val + '%; background: ' + scoreColor(val) + ';"></div>';
+        html += '</div>';
+        html += '<strong style="color: ' + scoreColor(val) + ';">' + val + '%</strong>';
+        html += '</div>';
+      });
+      html += '</div>';
+      html += '</div>';
+
+      // d. Executive summary
+      if (r.executive_summary) {
+        html += '<div class="executive-summary">';
+        html += '<div class="summary-card">';
+        html += '<div class="summary-section"><h3>Executive Summary</h3>';
+        html += '<p>' + escapeHtml(r.executive_summary) + '</p></div>';
+        html += '</div></div>';
+      }
+
+      // e. Findings
+      if (r.findings && r.findings.length > 0) {
+        var categories = [
+          { key: "visual", label: "Design & UX" },
+          { key: "technical", label: "Technical" },
+          { key: "business", label: "Business" },
+        ];
+
+        html += '<div class="findings-section">';
+        html += '<h2 style="margin-bottom: 1.5rem; color: #0f172a;">Findings</h2>';
+        html += '<div class="findings-tabs">';
+        categories.forEach(function (cat, i) {
+          var count = r.findings.filter(function (f) { return f.category === cat.key; }).length;
+          html += '<button class="findings-tab' + (i === 0 ? ' active' : '') + '" data-cat="' + cat.key + '">' + cat.label + ' (' + count + ')</button>';
+        });
+        html += '</div>';
+
+        categories.forEach(function (cat, i) {
+          html += '<div class="findings-group" data-cat="' + cat.key + '" style="' + (i !== 0 ? 'display:none;' : '') + '">';
+          r.findings.filter(function (f) { return f.category === cat.key; }).forEach(function (f) {
+            html += '<div class="finding-card" style="border-left-color: ' + severityColor(f.severity) + ';">';
+            html += '<span class="severity-badge" style="background: ' + severityColor(f.severity) + ';">' + escapeHtml(f.severity) + '</span>';
+            html += '<h4>' + escapeHtml(f.title) + '</h4>';
+            html += '<p>' + escapeHtml(f.description) + '</p>';
+            if (f.evidence) {
+              html += '<div class="finding-evidence"><strong>Evidence:</strong> ' + escapeHtml(f.evidence) + '</div>';
+            }
+            html += '</div>';
+          });
+          html += '</div>';
+        });
+        html += '</div>';
+      }
+
+      // f. Recommendations
+      if (r.recommendations && r.recommendations.length > 0) {
+        html += '<div class="recommendations-section">';
+        html += '<h2 style="margin-bottom: 1.5rem; color: #0f172a;">Recommendations</h2>';
+        r.recommendations.forEach(function (rec, i) {
+          html += '<div class="rec-card">';
+          html += '<span class="rec-number">' + (i + 1) + '</span>';
+          html += '<div class="rec-body">';
+          html += '<h4>' + escapeHtml(rec.title) + '</h4>';
+          html += '<p>' + escapeHtml(rec.description) + '</p>';
+          html += '<div class="rec-badges">';
+          if (rec.effort) html += '<span class="rec-badge">Effort: ' + escapeHtml(rec.effort) + '</span>';
+          if (rec.impact) html += '<span class="rec-badge">Impact: ' + escapeHtml(rec.impact) + '</span>';
+          if (rec.category) html += '<span class="rec-badge">' + escapeHtml(rec.category) + '</span>';
+          html += '</div>';
+          if (rec.first_step) {
+            html += '<div class="rec-first-step"><strong>First step:</strong> ' + escapeHtml(rec.first_step) + '</div>';
+          }
+          html += '</div></div>';
+        });
+        html += '</div>';
+      }
+
+      // g. Signals — "What we checked"
+      if (r.signals && r.signals.length > 0) {
+        html += '<div class="signals-section">';
+        html += '<details>';
+        html += '<summary>What we checked (' + r.signals.length + ' signals)</summary>';
+        r.signals.forEach(function (sig) {
+          var icon = sig.ok ? '<span style="color: #22c55e;">&#10003;</span>' : '<span style="color: #dc2626;">&#10007;</span>';
+          html += '<div class="signal-row">';
+          html += '<span class="signal-label">' + icon + ' ' + escapeHtml(sig.label) + '</span>';
+          html += '<span class="signal-value">' + escapeHtml(String(sig.value)) + '</span>';
+          html += '</div>';
+        });
+        html += '</details></div>';
+      }
+
+      // h. Five-question framework
+      var frameworkQuestions = [
+        { key: "client_description", label: "Who is the Client?" },
+        { key: "user_description", label: "Who is the User?" },
+        { key: "problem_description", label: "What is the Problem?" },
+        { key: "value_creation_description", label: "How Does It Create Value?" },
+        { key: "revenue_model_description", label: "How Does It Make Money?" },
+      ];
+
+      if (r.framework) {
+        var hasAny = frameworkQuestions.some(function (q) {
+          return r.framework[q.key] != null;
+        });
+
+        if (hasAny) {
+          html += '<div class="framework-section">';
+          html += '<h2 style="margin-bottom: 1.5rem; color: #0f172a;">Business Framework</h2>';
+          frameworkQuestions.forEach(function (q) {
+            var val = r.framework[q.key];
+            if (val == null) return;
+            html += '<div class="framework-qa-card">';
+            html += '<h4>' + escapeHtml(q.label) + '</h4>';
+            html += '<p>' + escapeHtml(val) + '</p>';
+            html += '</div>';
+          });
+          html += '</div>';
+        }
+      }
+
+      // Footer spacer
+      html += '<div style="padding: 3rem;"></div>';
+
+      root.innerHTML = html;
+
+      // Animate score ring (from the dead code in Task 1.5)
+      var scoreEl = document.getElementById("score");
+      var circleEl = document.getElementById("scoreCircle");
+      if (scoreEl && circleEl) {
+        var radius = circleEl.r.baseVal.value;
+        var circumference = 2 * Math.PI * radius;
+        circleEl.style.strokeDasharray = circumference;
+        circleEl.style.strokeDashoffset = circumference;
+        circleEl.style.stroke = scoreColor(r.scores.overall);
+
+        var target = r.scores.overall;
+        var current = 0;
+
+        function animateScore() {
+          current++;
+          scoreEl.textContent = current;
+          var offset = circumference - (current / 100) * circumference;
+          circleEl.style.strokeDashoffset = offset;
+          if (current < target) {
+            requestAnimationFrame(animateScore);
+          }
+        }
+        animateScore();
+      }
+
+      // Wire up findings tabs
+      document.querySelectorAll(".findings-tab").forEach(function (tab) {
+        tab.addEventListener("click", function () {
+          document.querySelectorAll(".findings-tab").forEach(function (t) { t.classList.remove("active"); });
+          tab.classList.add("active");
+          var cat = tab.dataset.cat;
+          document.querySelectorAll(".findings-group").forEach(function (g) {
+            g.style.display = g.dataset.cat === cat ? "" : "none";
+          });
+        });
+      });
+    }
+    </script>
+  </body>
+</html>

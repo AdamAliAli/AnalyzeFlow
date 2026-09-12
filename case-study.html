@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css"
+      integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+    <link rel="stylesheet" href="./style.css" />
+    <title>Case Study - ThinkFirst</title>
+  </head>
+
+  <body>
+    <header>
+      <nav>
+        <div class="logo">
+          <a href="./index.html">Think<span>First</span></a>
+        </div>
+        <ul>
+          <li><a href="./index.html">Home</a></li>
+          <li><a href="./index.html#framework">Framework</a></li>
+        </ul>
+        <a href="./index.html" style="color: #2563eb; text-decoration: none; font-weight: 600;">Back to Home</a>
+      </nav>
+    </header>
+
+    <div id="caseStudyRoot">
+      <div style="text-align: center; padding: 200px 2rem;">
+        <p style="color: #64748b;">Loading case study...</p>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="footer-bottom">
+        <p>&copy; 2026 AnalyzeFlow. All rights reserved.</p>
+      </div>
+    </footer>
+
+    <script src="./api.js"></script>
+    <script>
+    (async function () {
+      var root = document.getElementById("caseStudyRoot");
+
+      // Get slug from query param, default to damascus-restaurant
+      var params = new URLSearchParams(window.location.search);
+      var slug = params.get("slug") || "damascus-restaurant";
+
+      var cs;
+      try {
+        cs = await API.getCaseStudy(slug);
+      } catch (err) {
+        root.innerHTML = '<div class="case-hero"><h1>Case study not found</h1><p>' + escapeHtml(err.message) + '</p></div>';
+        return;
+      }
+
+      renderCaseStudy(cs);
+    })();
+
+    function escapeHtml(str) {
+      var div = document.createElement("div");
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    // Tiny markdown converter: headings, bold, paragraphs
+    function renderMarkdown(md) {
+      if (!md) return "";
+      var lines = md.split("\n");
+      var html = "";
+      var inParagraph = false;
+
+      lines.forEach(function (line) {
+        var trimmed = line.trim();
+
+        // Headings
+        if (trimmed.startsWith("### ")) {
+          if (inParagraph) { html += "</p>"; inParagraph = false; }
+          html += "<h4>" + escapeHtml(trimmed.substring(4)) + "</h4>";
+          return;
+        }
+        if (trimmed.startsWith("## ")) {
+          if (inParagraph) { html += "</p>"; inParagraph = false; }
+          html += "<h3>" + escapeHtml(trimmed.substring(3)) + "</h3>";
+          return;
+        }
+        if (trimmed.startsWith("# ")) {
+          if (inParagraph) { html += "</p>"; inParagraph = false; }
+          html += "<h2>" + escapeHtml(trimmed.substring(2)) + "</h2>";
+          return;
+        }
+
+        // Empty line = paragraph break
+        if (trimmed === "") {
+          if (inParagraph) { html += "</p>"; inParagraph = false; }
+          return;
+        }
+
+        // Regular text — apply bold
+        var processed = escapeHtml(trimmed).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+
+        if (!inParagraph) {
+          html += "<p>";
+          inParagraph = true;
+        } else {
+          html += " ";
+        }
+        html += processed;
+      });
+
+      if (inParagraph) html += "</p>";
+      return html;
+    }
+
+    function renderCaseStudy(cs) {
+      var root = document.getElementById("caseStudyRoot");
+      var html = "";
+
+      // Hero
+      html += '<section class="case-hero">';
+      html += '<span class="case-tag">Case Study</span>';
+      html += '<h1>' + escapeHtml(cs.title || "Case Study") + '</h1>';
+      if (cs.summary) {
+        html += '<p>' + escapeHtml(cs.summary) + '</p>';
+      }
+      html += '</section>';
+
+      // Overview cards
+      var overviewItems = [
+        { label: "Client Type", value: cs.client_type },
+        { label: "User Type", value: cs.user_type },
+        { label: "Problem", value: cs.problem },
+        { label: "Value Proposition", value: cs.value_proposition },
+        { label: "Revenue Model", value: cs.revenue_model },
+      ];
+
+      html += '<section class="overview">';
+      overviewItems.forEach(function (item) {
+        if (!item.value) return;
+        html += '<div class="overview-card">';
+        html += '<span style="display: block; color: #64748b; margin-bottom: 0.5rem; font-size: 0.9rem;">' + escapeHtml(item.label) + '</span>';
+        html += '<strong style="color: #0f172a; font-size: 1.1rem;">' + escapeHtml(item.value) + '</strong>';
+        html += '</div>';
+      });
+      html += '</section>';
+
+      // Key insight
+      if (cs.key_insight) {
+        html += '<section class="executive-summary">';
+        html += '<div class="summary-card">';
+        html += '<div class="summary-section">';
+        html += '<h3>Key Insight</h3>';
+        html += '<p>' + escapeHtml(cs.key_insight) + '</p>';
+        html += '</div></div></section>';
+      }
+
+      // Content (markdown)
+      if (cs.content) {
+        html += '<section class="analysis">';
+        html += '<div class="section-title"><h2>Full Analysis</h2></div>';
+        html += '<div class="summary-card">';
+        html += '<div class="summary-section">' + renderMarkdown(cs.content) + '</div>';
+        html += '</div></section>';
+      }
+
+      root.innerHTML = html;
+    }
+    </script>
+  </body>
+</html>
