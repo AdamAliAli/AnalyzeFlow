@@ -48,7 +48,7 @@ class OpenRouterAnalyzerProvider:
                 "function": {"name": "submit_analysis"},
             },
             "provider": {"require_parameters": True},
-            "max_tokens": 4096,
+            "max_tokens": 8192,
             "stream": False,
         }
 
