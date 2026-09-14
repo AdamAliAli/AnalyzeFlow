@@ -28,6 +28,7 @@ def _load_optional_providers() -> None:
     for module_name in (
         "app.services.ai.openai_provider",
         "app.services.ai.anthropic_provider",
+        "app.services.ai.openrouter_provider",
     ):
         try:
             __import__(module_name)
