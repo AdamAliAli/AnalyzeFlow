@@ -36,17 +36,17 @@ def inline_schema_refs(schema: dict) -> dict:
 
     return expand(schema)
 
-def build_analysis_tool() -> dict:                          # -> dict: means that this function returns a dictionary
+def build_analysis_tool() -> dict:
     schema = inline_schema_refs(AnalysisOutput.model_json_schema())             # model_json_schema convert our Pydantic model (AnalysisOutput) to a JSON schema
 
 
-    schema["properties"].pop("provider", None)                 # .pop extract provider and model from the json that
-    schema["properties"].pop("model", None)                         # we just converted
+    schema["properties"].pop("provider", None)
+    schema["properties"].pop("model", None)
 
     return {
         "type": "function",
-        "function": {                                            # This whole dictionary that we return is the format that OpenRouter (our provider)
-            "name": "submit_analysis",                                    # expect to get
+        "function": {
+            "name": "submit_analysis",
             "description": (
                 "Return a website analysis grounded in the supplied "
                 "business context and website evidence."
