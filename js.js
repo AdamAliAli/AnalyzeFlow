@@ -1,6 +1,6 @@
 // ==================== Counter animation ====================
 const counters = document.querySelectorAll(".counter");
-const observer = new IntersectionObserver((entries) => {
+const counterObserver = new IntersectionObserver((entries) => {
   entries.forEach((entry) => {
     if (entry.isIntersecting) {
       const counter = entry.target;
@@ -17,14 +17,18 @@ const observer = new IntersectionObserver((entries) => {
         }
       };
       updateCounter();
-      observer.unobserve(counter);
+      counterObserver.unobserve(counter);
     }
   });
 });
 
-counters.forEach((counter) => {
-  observer.observe(counter);
-});
+// Don't observe yet — wait until loadDynamicData settles so the real
+// data-target values are in place. See startCounterObservation() below.
+function startCounterObservation() {
+  counters.forEach((counter) => {
+    counterObserver.observe(counter);
+  });
+}
 
 // ==================== Framework cards toggle ====================
 const frameworkCards = document.querySelectorAll(".framework-card");
@@ -426,7 +430,9 @@ nextBtn.addEventListener("click", async () => {
 
     try {
       const result = await API.createAudit(payload);
-      showProgressScreen(result.audit.audit_id);
+      const auditId = result.audit.audit_id;
+      API.runAudit(auditId).catch(function () {});   // deliberately not awaited
+      showProgressScreen(auditId);
     } catch (err) {
       nextBtn.disabled = false;
       nextBtn.textContent = "Generate Report \u2192";
@@ -529,8 +535,7 @@ function showProgressScreen(auditId) {
       if (job.status === "succeeded") {
         clearPolling();
         // Navigate to report page
-        window.open("report.html?audit=" + auditId, "_blank");
-        closeAuditModal();
+        window.location.href = "report.html?audit=" + auditId;
       } else if (job.status === "failed") {
         clearPolling();
         showFailureScreen(auditId, job.error_message || "Something went wrong. Please try again.");
@@ -560,6 +565,7 @@ function showFailureScreen(auditId, message) {
     btn.textContent = "Retrying...";
     try {
       await API.retryAudit(auditId);
+      API.runAudit(auditId).catch(function () {});
       showProgressScreen(auditId);
     } catch (err) {
       btn.disabled = false;
@@ -593,6 +599,8 @@ function escapeHtml(str) {
   } catch (_) {
     // Keep hard-coded fallback values
   }
+  // Now that data-target values are settled, start observing
+  startCounterObservation();
 
   // Lookups — populate wizard
   try {
