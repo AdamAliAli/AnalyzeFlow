@@ -5,7 +5,18 @@
  * It must point to the root of the versioned API, e.g.
  *   "https://api.analyzeflow.example/api/v1"
  */
-const API_BASE = "http://localhost:8000/api/v1";
+
+// Set this to your deployed backend once it exists, e.g.
+//   "https://analyzeflow-api.vercel.app/api/v1"
+const PRODUCTION_API_BASE = "";
+
+// Local development falls back to the dev server automatically, so nobody has
+// to remember to switch this back and forth before committing.
+const IS_LOCAL = ["localhost", "127.0.0.1", ""].indexOf(location.hostname) !== -1;
+const API_BASE =
+  IS_LOCAL || !PRODUCTION_API_BASE
+    ? "http://localhost:8000/api/v1"
+    : PRODUCTION_API_BASE;
 
 (function () {
   "use strict";
@@ -13,22 +24,22 @@ const API_BASE = "http://localhost:8000/api/v1";
   // --------------- token helpers ---------------
 
   function getAccessToken() {
-    return sessionStorage.getItem("af_access_token");
+    return localStorage.getItem("af_access_token");
   }
 
   function getRefreshToken() {
-    return sessionStorage.getItem("af_refresh_token");
+    return localStorage.getItem("af_refresh_token");
   }
 
   function storeTokens(access, refresh) {
-    sessionStorage.setItem("af_access_token", access);
-    sessionStorage.setItem("af_refresh_token", refresh);
+    localStorage.setItem("af_access_token", access);
+    localStorage.setItem("af_refresh_token", refresh);
   }
 
   function clearTokens() {
-    sessionStorage.removeItem("af_access_token");
-    sessionStorage.removeItem("af_refresh_token");
-    sessionStorage.removeItem("af_user");
+    localStorage.removeItem("af_access_token");
+    localStorage.removeItem("af_refresh_token");
+    localStorage.removeItem("af_user");
   }
 
   // --------------- error helper ---------------
@@ -130,8 +141,8 @@ const API_BASE = "http://localhost:8000/api/v1";
         email: email,
         password: password,
       }, false);
-      storeTokens(data.access_token, data.refresh_token);
-      sessionStorage.setItem("af_user", JSON.stringify(data.user));
+      storeTokens(data.tokens.access_token, data.tokens.refresh_token);
+      localStorage.setItem("af_user", JSON.stringify(data.user));
       return data;
     },
 
@@ -140,8 +151,8 @@ const API_BASE = "http://localhost:8000/api/v1";
         email: email,
         password: password,
       }, false);
-      storeTokens(data.access_token, data.refresh_token);
-      sessionStorage.setItem("af_user", JSON.stringify(data.user));
+      storeTokens(data.tokens.access_token, data.tokens.refresh_token);
+      localStorage.setItem("af_user", JSON.stringify(data.user));
       return data;
     },
 
@@ -151,7 +162,7 @@ const API_BASE = "http://localhost:8000/api/v1";
 
     async me() {
       var data = await request("GET", "/auth/me");
-      sessionStorage.setItem("af_user", JSON.stringify(data));
+      localStorage.setItem("af_user", JSON.stringify(data));
       return data;
     },
 
@@ -177,6 +188,15 @@ const API_BASE = "http://localhost:8000/api/v1";
       return request("POST", "/audits/" + auditId + "/retry");
     },
 
+    // Serverless deployments (JOB_RUNNER=request) do the analysis inside this
+    // call, because a task started after the response is sent is not
+    // guaranteed to run there. Fire it WITHOUT awaiting and poll getJob().
+    // On an always-on backend the job has already started and this is a
+    // harmless no-op, so it is safe to call either way.
+    async runAudit(auditId) {
+      return request("POST", "/audits/" + auditId + "/run");
+    },
+
     // ---- stats ----
     async getStats() {
       return request("GET", "/stats", undefined, false);
@@ -197,7 +217,7 @@ const API_BASE = "http://localhost:8000/api/v1";
     },
 
     currentUser() {
-      var raw = sessionStorage.getItem("af_user");
+      var raw = localStorage.getItem("af_user");
       if (!raw) return null;
       try { return JSON.parse(raw); } catch (_) { return null; }
     },
