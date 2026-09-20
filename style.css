@@ -242,7 +242,8 @@ nav {
 /* mobile */
 @media (max-width: 576px) {
   .hero {
-    padding: 110px 1.5rem 3rem;
+    padding: clamp(6.75rem, 28vw, 7.25rem) clamp(1rem, 6vw, 1.5rem)
+      clamp(3rem, 10vw, 3.5rem);
 
     h1 {
       font-size: 2.4rem;
@@ -1051,8 +1052,22 @@ nav {
 
 /* responsive */
 @media (max-width: 768px) {
+  nav {
+    padding: 1rem clamp(1rem, 5vw, 2rem);
+    gap: 1rem;
+  }
+
   nav ul {
     display: none;
+  }
+
+  nav .logo {
+    flex-shrink: 0;
+  }
+
+  .auth-nav-link {
+    margin-left: auto;
+    flex-shrink: 0;
   }
 
   .hero {
@@ -1061,7 +1076,9 @@ nav {
     grid-template-columns: 1fr;
 
     justify-items: center;
-    gap: 7rem;
+    padding-top: clamp(7rem, 16vw, 7.75rem);
+    padding-bottom: clamp(3rem, 8vw, 4rem);
+    gap: clamp(3.5rem, 10vw, 5rem);
   }
 
   .hero-content {
@@ -1070,6 +1087,21 @@ nav {
     flex-direction: column;
     align-items: center;
     text-align: center;
+    gap: clamp(1rem, 3vw, 1.5rem);
+  }
+
+  .hero-content h1,
+  .hero-content p,
+  .hero .social-proof {
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+
+  .CTA {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: clamp(0.75rem, 2.5vw, 1rem);
   }
 
   .hero p {
