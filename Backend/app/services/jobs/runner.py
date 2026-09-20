@@ -21,9 +21,13 @@ async def _run_in_own_session(job_id: int) -> None:
 
 
 def dispatch(job: AnalysisJob, background: BackgroundTasks) -> None:
+    """Start the job, or leave it for whoever runs it in this deployment."""
     if settings.job_runner == "inline":
         background.add_task(_run_in_own_session, job.analysis_job_id)
+    elif settings.job_runner == "request":
+        # The client calls POST /audits/{id}/run next. Nothing to do here:
+        # a background task started now is not guaranteed to survive on
+        # serverless once this response has been sent.
+        logger.debug("Job %s waiting for an explicit /run call", job.public_id)
     else:
-        logger.debug(
-            "Job %s left queued for the external worker", job.public_id
-        )
+        logger.debug("Job %s left queued for the external worker", job.public_id)

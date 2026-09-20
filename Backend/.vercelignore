@@ -1,0 +1,8 @@
+tests/
+docs/
+docker-compose.yml
+Dockerfile
+requirements-dev.txt
+ruff.toml
+pytest.ini
+.env
