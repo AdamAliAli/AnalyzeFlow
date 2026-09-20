@@ -153,6 +153,33 @@ async def retry_audit(
     return JobOut.from_model(job)
 
 
+@router.post("/{audit_id}/run", response_model=JobOut)
+async def run_audit(audit_id: str, db: DbSession, user: CurrentUser) -> JobOut:
+    """Run the analysis for a submitted audit.
+
+    On serverless (JOB_RUNNER=request) this is the call that actually does the
+    work. On an always-on backend the job has already been dispatched by
+    create_audit, so this is a harmless idempotent no-op.
+    """
+    audit = await _load_audit(db, audit_id, user)
+    job = await db.scalar(
+        select(AnalysisJob)
+        .where(AnalysisJob.audit_submission_id == audit.audit_submission_id)
+        .order_by(AnalysisJob.created_at.desc())
+        .limit(1)
+    )
+    if job is None:
+        raise NotFoundError("No analysis has been started for that audit.")
+    if job.status in (JobStatus.RUNNING, JobStatus.SUCCEEDED):
+        return JobOut.from_model(job)
+
+    from app.services.analysis.pipeline import run_analysis
+
+    await run_analysis(db, job.analysis_job_id)
+    await db.refresh(job)
+    return JobOut.from_model(job)
+
+
 @router.get("", response_model=Page[AuditOut])
 async def list_audits(
     db: DbSession, user: CurrentUser, page: int = 1, page_size: int = 20

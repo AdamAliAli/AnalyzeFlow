@@ -51,8 +51,12 @@ class Settings(BaseSettings):
     ai_timeout_seconds: float = 90.0
     ai_max_retries: int = 2
 
+    # --- Platform ---
+    # True on serverless hosts (Vercel). Switches the DB to NullPool.
+    serverless: bool = False
+
     # --- Jobs ---
-    job_runner: Literal["inline", "worker"] = "inline"
+    job_runner: Literal["inline", "worker", "request"] = "inline"
     job_max_attempts: int = 3
     job_poll_interval_seconds: float = 2.0
 
